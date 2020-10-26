@@ -14,6 +14,8 @@
 // Include required header files
 #include "project.h"
 
+#define SOGLIA 4000
+
 // Variables declaration */
 int32 value_digit;
 int32 value_mv;
@@ -22,6 +24,11 @@ uint8 SendBytesFlag=0;
 int DC;
 int DC_Volt;
 uint8 DutyCycle;
+int32 value_photo_digit;
+int32 value_mv_photo;
+extern uint8 channel;
+int Flag=0;
+uint8 val=0;
 
 CY_ISR(Custom_ISR_ADC)
 {
@@ -30,24 +37,42 @@ CY_ISR(Custom_ISR_ADC)
     Timer_ReadStatusRegister();
     if(SendBytesFlag==1)
     {
-        value_digit = ADC_DelSig_Read32();
-        if(value_digit < 0)
+        if(Flag==0)
         {
-            value_digit = 0;
+            value_photo_digit = ADC_DelSig_Read32(); 
+            value_mv_photo = ADC_DelSig_CountsTo_mVolts(value_photo_digit);
+            if(value_mv_photo >= SOGLIA)
+            {
+                Flag=1;
+                channel=1;
+                AMux_FastSelect(channel);
+            }
         }
-        else if(value_digit > 65535) 
+        
+        
+        else if(Flag==1)
         {
-            value_digit = 65535;
-        }
-
-        value_mv = ADC_DelSig_CountsTo_mVolts(value_digit);
-        DC_Volt = value_mv;
-        DC = (255*DC_Volt)/5000;
-        DutyCycle = DC;
-        PWM_WriteCompare(DutyCycle);
-        // Format ADC result for transmition
-        sprintf(DataBuffer , "Sample: %d\r\n",DutyCycle);
-        PacketReadyFlag = 1;
+            value_digit = ADC_DelSig_Read32();
+            if(value_digit < 0)
+            {
+                value_digit = 0;
+            }
+            else if(value_digit > 65535) 
+            {
+                value_digit = 65535;
+            }
+        
+            value_mv = ADC_DelSig_CountsTo_mVolts(value_digit);
+            DC_Volt = value_mv;
+            DC = (255*DC_Volt)/5000;
+            DutyCycle = DC;
+            PWM_WriteCompare(DutyCycle);
+            val = (100*DutyCycle)/255;
+            
+            // Format ADC result for transmition
+            sprintf(DataBuffer , "DutyCycle: %d\r\n",val);
+            PacketReadyFlag = 1;
+         }
     }
 }
 

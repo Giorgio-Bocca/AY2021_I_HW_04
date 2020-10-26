@@ -13,7 +13,8 @@
 #include "InterruptRoutines.h"
 #include "stdio.h"
 
-uint8 channel=1;
+uint8 channel=0;
+extern int Flag;
 
 int main(void)
 {
@@ -35,11 +36,14 @@ int main(void)
     for(;;)
     {
         /* Place your application code here. */
-        if(PacketReadyFlag == 1)
+        if(PacketReadyFlag==1 && Flag==1)
         {
             // Send out the data
             UART_PutString(DataBuffer);
             PacketReadyFlag = 0;
+            Flag=0;
+            channel=0;
+            AMux_FastSelect(channel);
         }
     }
 }
