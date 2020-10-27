@@ -33,13 +33,19 @@ int main(void)
     
     ADC_DelSig_StartConvert();
     
+    // Set up header and tail
+    DataBuffer1[0] = 0xA0;
+    DataBuffer1[TRANSMIT_BUFFER_SIZE-1] = 0xC0;
+      
     for(;;)
     {
         /* Place your application code here. */
         if(PacketReadyFlag==1 && Flag==1)
         {
             // Send out the data
-            UART_PutString(DataBuffer);
+            //UART_PutString(String);
+            UART_PutArray(DataBuffer1,TRANSMIT_BUFFER_SIZE);
+            //UART_PutArray(DataBuffer2,TRANSMIT_BUFFER_SIZE);
             PacketReadyFlag = 0;
             Flag=0;
             channel=0;

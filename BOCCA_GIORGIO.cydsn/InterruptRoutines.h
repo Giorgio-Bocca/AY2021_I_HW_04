@@ -15,12 +15,14 @@
     #include "cytypes.h"
     #include "stdio.h"
 
-    #define TRANSMIT_BUFFER_SIZE 16
+    #define BYTE_TO_SEND 4
+    #define TRANSMIT_BUFFER_SIZE 1+BYTE_TO_SEND+1
 
     CY_ISR_PROTO(Custom_ISR_ADC);
     CY_ISR_PROTO(Custom_ISR_RX);
 
-    char DataBuffer[TRANSMIT_BUFFER_SIZE];
+    uint8 DataBuffer1[TRANSMIT_BUFFER_SIZE];
+    //char String[16];
     volatile uint8 PacketReadyFlag;
 #endif
 

@@ -28,7 +28,8 @@ int32 value_photo_digit;
 int32 value_mv_photo;
 extern uint8 channel;
 int Flag=0;
-uint8 val=0;
+uint16 val=0;
+uint16 array;
 
 CY_ISR(Custom_ISR_ADC)
 {
@@ -40,15 +41,18 @@ CY_ISR(Custom_ISR_ADC)
         if(Flag==0)
         {
             value_photo_digit = ADC_DelSig_Read32(); 
-            value_mv_photo = ADC_DelSig_CountsTo_mVolts(value_photo_digit);
+            value_mv_photo = ADC_DelSig_CountsTo_mVolts(value_photo_digit);            
             if(value_mv_photo >= SOGLIA)
             {
                 Flag=1;
                 channel=1;
                 AMux_FastSelect(channel);
             }
+            else
+            {
+                PWM_WriteCompare(0);
+            }
         }
-        
         
         else if(Flag==1)
         {
@@ -60,17 +64,18 @@ CY_ISR(Custom_ISR_ADC)
             else if(value_digit > 65535) 
             {
                 value_digit = 65535;
-            }
-        
-            value_mv = ADC_DelSig_CountsTo_mVolts(value_digit);
-            DC_Volt = value_mv;
-            DC = (255*DC_Volt)/5000;
-            DutyCycle = DC;
-            PWM_WriteCompare(DutyCycle);
-            val = (100*DutyCycle)/255;
+            }   
+           
+            array = value_digit >> 8; 
+            PWM_WriteCompare(array);
+            val = (100*array)/255;
             
+            DataBuffer1[1]=array;
+            DataBuffer1[2]=array >> 8;   
+            DataBuffer1[3]=value_photo_digit >> 8;
+            DataBuffer1[4]=value_photo_digit & 0xFF;
             // Format ADC result for transmition
-            sprintf(DataBuffer , "DutyCycle: %d\r\n",val);
+            //sprintf(String,"DutyCycle: %d\r\n",val);
             PacketReadyFlag = 1;
          }
     }
