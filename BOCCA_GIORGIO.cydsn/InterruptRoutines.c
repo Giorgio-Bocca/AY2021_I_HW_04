@@ -14,68 +14,61 @@
 // Include required header files
 #include "project.h"
 
-#define SOGLIA 4000
+#define SOGLIA 4000 //Setto la soglia (in mV) del fotoresistore
 
 // Variables declaration */
-int32 value_digit;
-int32 value_mv;
-uint8 ch_receveid;
+int32 value_pot_digit;
+uint8 ch_received;
 uint8 SendBytesFlag=0;
-int DC;
-int DC_Volt;
-uint8 DutyCycle;
 int32 value_photo_digit;
 int32 value_mv_photo;
 extern uint8 channel;
-int Flag=0;
-uint16 val=0;
-uint16 array;
+uint16 array_pot;
 
 CY_ISR(Custom_ISR_ADC)
 {
     // Read Timer status register to bring interrupt line low
-   
     Timer_ReadStatusRegister();
-    if(SendBytesFlag==1)
+    if(SendBytesFlag==1)//Se abilito l'invio dei dati tramite UART...
     {
-        if(Flag==0)
+        if(channel==0)//Prima campiono il segnale del fotoresistore...
         {
-            value_photo_digit = ADC_DelSig_Read32(); 
-            value_mv_photo = ADC_DelSig_CountsTo_mVolts(value_photo_digit);            
+            value_photo_digit = ADC_DelSig_Read32(); //Leggo il valore dall'ADC
+            value_mv_photo = ADC_DelSig_CountsTo_mVolts(value_photo_digit); //Converto il valore letto in mV            
             if(value_mv_photo >= SOGLIA)
             {
-                Flag=1;
+                //Se il valore del fotoresistore supera la soglia, abilito il campionamento del segnale del potenziometro
                 channel=1;
                 AMux_FastSelect(channel);
             }
             else
-            {
+            {    
+                //Se il valore del fotoresistore non supera la soglia, il LED è OFF
                 PWM_WriteCompare(0);
             }
         }
         
-        else if(Flag==1)
+        else if(channel==1) //Se campiono il segnale del potenziometro...
         {
-            value_digit = ADC_DelSig_Read32();
-            if(value_digit < 0)
+            value_pot_digit = ADC_DelSig_Read32(); //Leggo il valore dall'ADC
+            if(value_pot_digit < 0)
             {
-                value_digit = 0;
+                value_pot_digit = 0;
             }
-            else if(value_digit > 65535) 
+            else if(value_pot_digit > 65535) 
             {
-                value_digit = 65535;
+                value_pot_digit = 65535;
             }   
            
-            array = value_digit >> 8; 
-            PWM_WriteCompare(array);
-            val = (100*array)/255;
+            array_pot = value_pot_digit >> 8; 
+            PWM_WriteCompare(array_pot); //Setto il DutyCycle del PWM in base al valore campionato dal potenziometro
             
-            DataBuffer1[1]=array;
-            DataBuffer1[2]=array >> 8;   
+            // Format ADC result for transmition: creo i bytes del pacchetto da inviare al BCP per il plot dei segnali
+            DataBuffer1[1]=array_pot;
+            DataBuffer1[2]=array_pot >> 8;   
             DataBuffer1[3]=value_photo_digit >> 8;
             DataBuffer1[4]=value_photo_digit & 0xFF;
-            // Format ADC result for transmition
-            //sprintf(String,"DutyCycle: %d\r\n",val);
+                      
             PacketReadyFlag = 1;
          }
     }
@@ -83,18 +76,19 @@ CY_ISR(Custom_ISR_ADC)
 
 CY_ISR(Custom_ISR_RX)
 {
-    // Non blocking call to get the latest data recieved
-    ch_receveid = UART_GetChar();
+    // Non blocking call to get the latest data receveid
+    ch_received = UART_GetChar();
     // Set flags based on UART command
-    switch(ch_receveid)
+    switch(ch_received)
     {
+        //Se invio 'B' o 'b' abilito il campionamento e l'invio dei dati al BCP
         case 'B':
         
         case 'b': 
-            SendBytesFlag = 1;
+            SendBytesFlag = 1; 
             Timer_Start();
             break;
-
+        //Se invio 'S' o 's' blocco il campionamento e l'invio dei dati al BCP
         case 'S':
 
         case 's':
@@ -104,7 +98,6 @@ CY_ISR(Custom_ISR_RX)
 
         default:
             break;
-
     }   
 }
 

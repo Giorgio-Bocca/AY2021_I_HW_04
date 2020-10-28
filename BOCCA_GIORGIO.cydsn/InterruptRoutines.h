@@ -22,7 +22,6 @@
     CY_ISR_PROTO(Custom_ISR_RX);
 
     uint8 DataBuffer1[TRANSMIT_BUFFER_SIZE];
-    //char String[16];
     volatile uint8 PacketReadyFlag;
 #endif
 
