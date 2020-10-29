@@ -17,13 +17,13 @@
 #define SOGLIA 4000 //Setto la soglia (in mV) del fotoresistore
 
 // Variables declaration */
-int32 value_pot_digit;
-uint8 ch_received;
-uint8 SendBytesFlag=0;
-int32 value_photo_digit;
-int32 value_mv_photo;
+int32 value_pot_digit; //Variabile nella quale salvo il valore campionato dal potenziometro
+uint8 ch_received; //Variabile nella quale salvo salvo il valore campionato dal potenziometro e convertito in mV
+uint8 SendBytesFlag=0; //Variabile utilizzata per abilitare l'invio dei dati tramite UART
+int32 value_photo_digit; //Variabile nella quela salvo il valore campionato dal fotoresistore
+int32 value_mv_photo; //Variabile nella quale salvo il valore campionato dal fotoresistore e convertito in mV
 extern uint8 channel;
-uint16 array_pot;
+uint16 array_pot; //Variabile utilizzata per ricavare il DutyCycle del PWM in bytes
 
 CY_ISR(Custom_ISR_ADC)
 {
